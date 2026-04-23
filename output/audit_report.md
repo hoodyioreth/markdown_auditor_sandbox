@@ -1,6 +1,6 @@
 # Markdown Audit Report
 
-Version: 1.2.0
+Version: 1.2.1
 
 Audit root: /Users/hood-mbp16-m1m/Library/CloudStorage/Dropbox/Fortress/github/Claude-ChatGPT/AI_Projects/markdown_auditor_sandbox/test_data
 

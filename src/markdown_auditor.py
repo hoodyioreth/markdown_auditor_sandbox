@@ -3,7 +3,7 @@
 """
 markdown_auditor.py
 
-Version: 1.2.0
+Version: 1.2.1
 
 Scans a directory recursively for Markdown files and generates a report:
 - Total markdown files
@@ -14,7 +14,7 @@ Scans a directory recursively for Markdown files and generates a report:
 - Largest files
 
 Usage:
-    python markdown_auditor.py --root ../test_data/sample_md --output ../output/audit_report.md
+    python markdown_auditor.py [--root ../test_data] [--output ../output/audit_report.md]
 """
 
 from pathlib import Path
@@ -23,7 +23,7 @@ import re
 from urllib.parse import unquote
 from collections import Counter
 
-__version__ = "1.2.0"
+__version__ = "1.2.1"
 
 
 LINK_PATTERN = re.compile(r'(?<!!)\[.*?\]\((.*?)\)')
@@ -171,16 +171,22 @@ def write_report(data, output_path: Path, root: Path):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--version", "-v", action="store_true", help="Show script version")
-    parser.add_argument("--root", help="Root folder to scan")
-    parser.add_argument("--output", default="../output/audit_report.md")
+    parser.add_argument("--root", default="../test_data", help="Root folder to scan")
+    parser.add_argument("--output", default="../output/audit_report.md", help="Output report path")
 
     args = parser.parse_args()
 
     if args.version:
         print(f"markdown_auditor.py version {__version__}")
         return
-    if not args.root:
-        parser.error("the following arguments are required: --root")
+
+    using_default_root = args.root == "../test_data"
+    using_default_output = args.output == "../output/audit_report.md"
+
+    if using_default_root:
+        print("Using default --root: ../test_data")
+    if using_default_output:
+        print("Using default --output: ../output/audit_report.md")
 
     root = Path(args.root).resolve()
     output = Path(args.output).resolve()
