@@ -3,7 +3,7 @@
 """
 markdown_auditor.py
 
-Version: 1.1.0
+Version: 1.2.0
 
 Scans a directory recursively for Markdown files and generates a report:
 - Total markdown files
@@ -21,8 +21,9 @@ from pathlib import Path
 import argparse
 import re
 from urllib.parse import unquote
+from collections import Counter
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 
 
 LINK_PATTERN = re.compile(r'(?<!!)\[.*?\]\((.*?)\)')
@@ -62,6 +63,11 @@ def rel_to_root(path: Path, root: Path) -> str:
         return str(path.relative_to(root))
     except ValueError:
         return str(path)
+
+
+def count_broken_links(items):
+    """Count duplicate broken links by (file, target)."""
+    return Counter(items)
 
 
 def audit_markdown(root: Path):
@@ -107,12 +113,17 @@ def audit_markdown(root: Path):
 
     largest_files = sorted(file_sizes, key=lambda x: x[1], reverse=True)[:5]
 
+    broken_markdown_link_counts = count_broken_links(broken_markdown_links)
+    broken_image_link_counts = count_broken_links(broken_image_links)
+
     return {
         "total_files": len(md_files),
         "total_links": total_links,
         "image_links": image_links,
         "broken_markdown_links": broken_markdown_links,
         "broken_image_links": broken_image_links,
+        "broken_markdown_link_counts": broken_markdown_link_counts,
+        "broken_image_link_counts": broken_image_link_counts,
         "largest_files": largest_files,
     }
 
@@ -131,16 +142,24 @@ def write_report(data, output_path: Path, root: Path):
         f.write(f"Broken image links: {len(data['broken_image_links'])}\n\n")
 
         f.write("## Broken Markdown Links\n")
-        if data["broken_markdown_links"]:
-            for file, link in data["broken_markdown_links"]:
-                f.write(f"- {rel_to_root(file, root)}: {link}\n")
+        if data["broken_markdown_link_counts"]:
+            for (file, link), count in sorted(
+                data["broken_markdown_link_counts"].items(),
+                key=lambda x: (str(x[0][0]), x[0][1])
+            ):
+                suffix = f" (x{count})" if count > 1 else ""
+                f.write(f"- {rel_to_root(file, root)}: {link}{suffix}\n")
         else:
             f.write("- None\n")
 
         f.write("\n## Broken Image Links\n")
-        if data["broken_image_links"]:
-            for file, link in data["broken_image_links"]:
-                f.write(f"- {rel_to_root(file, root)}: {link}\n")
+        if data["broken_image_link_counts"]:
+            for (file, link), count in sorted(
+                data["broken_image_link_counts"].items(),
+                key=lambda x: (str(x[0][0]), x[0][1])
+            ):
+                suffix = f" (x{count})" if count > 1 else ""
+                f.write(f"- {rel_to_root(file, root)}: {link}{suffix}\n")
         else:
             f.write("- None\n")
 
